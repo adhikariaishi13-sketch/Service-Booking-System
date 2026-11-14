@@ -16,10 +16,16 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server requests and the configured frontend domains.
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    // Allow server-to-server requests, configured origins, and Vercel deployments.
+    const isVercelOrigin = origin && /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin);
+    if (!origin || allowedOrigins.includes(origin) || isVercelOrigin) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
   },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
 }));
 app.use(express.json());
 
