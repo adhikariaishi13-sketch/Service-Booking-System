@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-// All requests go to /api (forwarded to Express by the Vite proxy in development)
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
+// In production, call the deployed Express API directly.
+// In local development, use Vite's /api proxy.
+const API_BASE_URL = import.meta.env.PROD
+  ? 'https://service-booking-system-api.onrender.com/api'
+  : '/api';
+
+const api = axios.create({ baseURL: API_BASE_URL });
 
 // Attach the JWT to every request automatically
 api.interceptors.request.use((config) => {
