@@ -8,32 +8,53 @@ const populateBooking = (q) =>
 
 // POST /api/bookings
 exports.createBooking = asyncHandler(async (req, res) => {
-  const { serviceId, bookingDate, timeSlot, address, contactNumber, instructions } = req.body;
+  const {
+    serviceId, bookingDate, timeSlot, address,
+    contactNumber, instructions,
+  } = req.body;
+
+  const paymentMethod = req.body.paymentMethod || 'Pay After';
 
   if (!serviceId || !bookingDate || !timeSlot || !address || !contactNumber) {
     res.status(400);
     throw new Error('Service, date, time slot, address and contact number are required');
   }
+
+  if (!['Pay Before', 'Pay After'].includes(paymentMethod)) {
+    res.status(400);
+    throw new Error('Invalid payment method');
+  }
+
   if (!TIME_SLOTS.includes(timeSlot)) {
     res.status(400);
     throw new Error('Invalid time slot');
   }
+
   if (!/^[6-9]\d{9}$/.test(contactNumber)) {
     res.status(400);
     throw new Error('Enter a valid 10-digit mobile number');
   }
+
   const date = new Date(bookingDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
   if (isNaN(date.getTime()) || date < today) {
     res.status(400);
     throw new Error('Booking date cannot be in the past');
   }
+
   const service = await Service.findById(serviceId);
+
   if (!service) {
     res.status(404);
     throw new Error('Service not found');
   }
+
+  const originalPrice = service.price;
+  const discount = paymentMethod === 'Pay Before' ? 20 : 0;
+  const finalPrice = Math.max(0, originalPrice - discount);
+
   const booking = await Booking.create({
     user: req.user._id,
     service: service._id,
@@ -42,9 +63,16 @@ exports.createBooking = asyncHandler(async (req, res) => {
     address,
     contactNumber,
     instructions,
-    price: service.price,
+    originalPrice,
+    discount,
+    price: finalPrice,
+    paymentMethod,
+    paymentStatus: 'Pending',
   });
-  res.status(201).json(await populateBooking(Booking.findById(booking._id)));
+
+  res.status(201).json(
+    await populateBooking(Booking.findById(booking._id))
+  );
 });
 
 // GET /api/bookings/slots

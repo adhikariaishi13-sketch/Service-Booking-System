@@ -11,8 +11,23 @@ const bookingSchema = new mongoose.Schema(
     address: { type: String, required: [true, 'Address is required'], trim: true },
     contactNumber: { type: String, required: [true, 'Contact number is required'], trim: true },
     instructions: { type: String, trim: true, default: '' },
-    price: { type: Number, required: true }, // price saved at the time of booking
-    status: { type: String, enum: STATUSES, default: 'Pending' },
+    originalPrice: { type: Number, required: true },
+discount: { type: Number, default: 0 },
+price: { type: Number, required: true },
+
+paymentMethod: {
+  type: String,
+  enum: ['Pay Before', 'Pay After'],
+  default: 'Pay After',
+},
+
+paymentStatus: {
+  type: String,
+  enum: ['Pending', 'Paid'],
+  default: 'Pending',
+},
+
+status: { type: String, enum: STATUSES, default: 'Pending' },
   },
   { timestamps: true }
 );
